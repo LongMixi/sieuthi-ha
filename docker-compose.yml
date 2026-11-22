@@ -1,0 +1,73 @@
+services:
+  mysql-master:
+    image: mysql:8.0
+    container_name: mysql-master
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: ql_sieuthi
+    ports:
+      - "3305:3306"
+    volumes:
+      - ./master/my.cnf:/etc/mysql/conf.d/my.cnf
+    networks:
+      - db-network
+
+  mysql-slave1:
+    image: mysql:8.0
+    container_name: mysql-slave1
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./slave1/my.cnf:/etc/mysql/conf.d/my.cnf
+    depends_on:
+      - mysql-master
+    networks:
+      - db-network
+
+  mysql-slave2:
+    image: mysql:8.0
+    container_name: mysql-slave2
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+    ports:
+      - "3308:3306"
+    volumes:
+      - ./slave2/my.cnf:/etc/mysql/conf.d/my.cnf
+    depends_on:
+      - mysql-master
+    networks:
+      - db-network
+
+  proxysql:
+    image: proxysql/proxysql:latest
+    container_name: proxysql
+    restart: always
+    ports:
+      - "6033:6033" # Cổng ứng dụng/Workbench kết nối vào để tự tách Đọc/Ghi
+      - "6032:6032" # Cổng Admin cấu hình ProxySQL
+    depends_on:
+      - mysql-master
+      - mysql-slave1
+      - mysql-slave2
+    networks:
+      - db-network
+
+  watchdog:
+    build: ./failover
+    container_name: failover-watchdog
+    restart: always
+    depends_on:
+      - mysql-master
+      - mysql-slave1
+      - mysql-slave2
+    networks:
+      - db-network
+
+networks:
+  db-network:
+    driver: bridge
