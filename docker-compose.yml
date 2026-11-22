@@ -10,8 +10,15 @@ services:
       - "3305:3306"
     volumes:
       - ./master/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./master/set_up.sql:/docker-entrypoint-initdb.d/set_up.sql
     networks:
       - db-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpassword"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
 
   mysql-slave1:
     image: mysql:8.0
@@ -24,9 +31,16 @@ services:
     volumes:
       - ./slave1/my.cnf:/etc/mysql/conf.d/my.cnf
     depends_on:
-      - mysql-master
+      mysql-master:
+        condition: service_healthy
     networks:
       - db-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpassword"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
 
   mysql-slave2:
     image: mysql:8.0
@@ -39,9 +53,16 @@ services:
     volumes:
       - ./slave2/my.cnf:/etc/mysql/conf.d/my.cnf
     depends_on:
-      - mysql-master
+      mysql-master:
+        condition: service_healthy
     networks:
       - db-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootpassword"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 20s
 
   proxysql:
     image: proxysql/proxysql:latest
@@ -51,20 +72,26 @@ services:
       - "6033:6033" # Cổng ứng dụng/Workbench kết nối vào để tự tách Đọc/Ghi
       - "6032:6032" # Cổng Admin cấu hình ProxySQL
     depends_on:
-      - mysql-master
-      - mysql-slave1
-      - mysql-slave2
+      mysql-master:
+        condition: service_healthy
+      mysql-slave1:
+        condition: service_healthy
+      mysql-slave2:
+        condition: service_healthy
     networks:
       - db-network
 
   watchdog:
     build: ./failover
     container_name: failover-watchdog
-    restart: always
+    restart: "no"
     depends_on:
-      - mysql-master
-      - mysql-slave1
-      - mysql-slave2
+      mysql-master:
+        condition: service_healthy
+      mysql-slave1:
+        condition: service_healthy
+      mysql-slave2:
+        condition: service_healthy
     networks:
       - db-network
 
