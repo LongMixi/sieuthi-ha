@@ -84,7 +84,7 @@ services:
   watchdog:
     build: ./failover
     container_name: failover-watchdog
-    restart: "no"
+    restart: "always"
     depends_on:
       mysql-master:
         condition: service_healthy
