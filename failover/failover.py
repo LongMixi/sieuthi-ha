@@ -10,8 +10,8 @@ REPL_PASS = 'Replica@123'
 
 PROXYSQL_HOST = 'proxysql'
 PROXYSQL_PORT = 6032
-PROXYSQL_ADMIN_USER = 'admin'
-PROXYSQL_ADMIN_PASS = 'admin'
+PROXYSQL_ADMIN_USER = 'radmin'
+PROXYSQL_ADMIN_PASS = 'radmin'
 
 
 def connect_db(host, port=3306, user='root', password=DB_PASS, timeout=5):
@@ -203,8 +203,9 @@ def failback_to_master():
 
 
 if __name__ == "__main__":
-    print(">>> Watchdog (Auto-Failover & Auto-Failback) đang khởi động...", flush=True)
+    print(">>> Watchdog (Auto-Failover & Auto-Failback) đang khởi động (chờ 15 giây ổn định)...", flush=True)
     time.sleep(15)
+    print(">>> [SẴN SÀNG] Watchdog đã khởi động xong! Đang giám sát mysql-master (mỗi 3 giây)...", flush=True)
 
     state = "NORMAL"  # NORMAL | FAILED_OVER
     fail_count = 0
@@ -226,6 +227,7 @@ if __name__ == "__main__":
                         state = "FAILED_OVER"
                         fail_count = 0
                         recover_count = 0
+                        print(">>> [TRẠNG THÁI: FAILED_OVER] Đang chờ mysql-master sống lại để Auto-Failback...", flush=True)
 
         elif state == "FAILED_OVER":
             if alive:
@@ -235,6 +237,7 @@ if __name__ == "__main__":
                     if failback_to_master():
                         state = "NORMAL"
                         recover_count = 0
+                        print(">>> [TRẠNG THÁI: NORMAL] Đang tiếp tục giám sát mysql-master...", flush=True)
                     else:
                         # Nếu có errant GTID thì dừng thử tự động để người vận hành kiểm tra
                         time.sleep(30)

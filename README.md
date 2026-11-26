@@ -109,6 +109,9 @@ Nạp cấu hình vào cổng quản trị `6032` của ProxySQL (`hostgroup 10`
 
 ```bash
 docker exec -i proxysql mysql -uadmin -padmin -h 127.0.0.1 -P 6032 -e "
+SET admin-admin_credentials='admin:admin;radmin:radmin';
+LOAD ADMIN VARIABLES TO RUNTIME; SAVE ADMIN VARIABLES TO DISK;
+
 SET mysql-monitor_username='monitor';
 SET mysql-monitor_password='monitor';
 LOAD MYSQL VARIABLES TO RUNTIME; SAVE MYSQL VARIABLES TO DISK;
