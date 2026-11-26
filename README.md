@@ -1,6 +1,6 @@
 # Hệ thống MySQL High Availability (Replication, ProxySQL & Auto-Failover/Failback) - `sieuthi-ha`
 
-Dự án triển khai mô hình **MySQL 8.0 Replication** (1 Master - 2 Slaves) sử dụng **GTID**, tích hợp **ProxySQL** (tách Đọc/Ghi và cân bằng tải) và **Failover Watchdog** (tự động chuyển đổi dự phòng khi Master sập và tự động hoàn nguyên khi Master sống lại) trên Docker Compose cho cơ sở dữ liệu quản lý bán hàng siêu thị `ql_sieuthi`.
+Dự án triển khai mô hình **MySQL 8.0 Semi-Sync Replication** (1 Master - 2 Slaves) sử dụng **GTID**, tích hợp **ProxySQL** (tách Đọc/Ghi và cân bằng tải) và **Failover Watchdog** (tự động chuyển đổi dự phòng khi Master sập và tự động hoàn nguyên khi Master sống lại) trên Docker Compose cho cơ sở dữ liệu quản lý bán hàng siêu thị `ql_sieuthi`.
 
 ---
 
@@ -82,6 +82,14 @@ done
 ```
 
 > **Đạt yêu cầu:** Cả 2 Slave hiển thị `Source_Host: mysql-master`, `Replica_IO_Running: Yes`, `Replica_SQL_Running: Yes` và `Seconds_Behind_Source: 0`.
+
+Kiểm tra **Semi-Sync Replication** đã hoạt động trên Master (plugin `semisync_source.so` và `semisync_replica.so` đã được nạp sẵn trong `my.cnf` của cả 3 node để giữ cấu hình sau khi restart và duy trì Semi-Sync cả khi Failover/Failback):
+
+```bash
+docker exec mysql-master mysql -uroot -prootpassword -e "SHOW STATUS LIKE 'Rpl_semi_sync_source_%';"
+```
+
+> **Đạt yêu cầu:** `Rpl_semi_sync_source_status = ON` và `Rpl_semi_sync_source_clients = 2`.
 
 ### Bước 3: Nạp CSDL `ql_sieuthi` (10 bảng, 101.140 dòng)
 
